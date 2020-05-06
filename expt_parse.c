@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "basis.h"
 #include "basis_lib.h"
+#include "ecp_lib.h"
 #include "error.h"
 #include "expt_lexer.h"
 #include "molecule.h"
@@ -18,6 +18,7 @@
 void directive_geometry(molecule_t *mol);
 void directive_basis(basis_lib_t *basis);
 void directive_basis_block(basis_lib_t *basis);
+void directive_ecp(ecp_lib_t *ecp_lib, int pot_type);
 
 void yyerror(char *s);
 int next_token();
@@ -30,7 +31,7 @@ void parse_sector(char *s, int *h, int *p);
 int angular_momentum_to_int(char *lstr);
 
 
-void expt_parse(char *file_name, molecule_t *mol, basis_lib_t *basis)
+void expt_parse(char *file_name, molecule_t *mol, basis_lib_t *basis, ecp_lib_t *ecp_lib)
 {
     int token_type;
 
@@ -49,6 +50,12 @@ void expt_parse(char *file_name, molecule_t *mol, basis_lib_t *basis)
                 break;
             case KEYWORD_BASIS:
                 directive_basis(basis);
+                break;
+            case KEYWORD_ECP:
+                directive_ecp(ecp_lib, ECP_AVERAGED);
+                break;
+            case KEYWORD_SO:
+                directive_ecp(ecp_lib, ECP_SPIN_ORBIT);
                 break;
             case END_OF_LINE:
                 // nothing to do
@@ -79,6 +86,11 @@ void directive_geometry(molecule_t *mol)
     static char *err_no_newline = "expected end of line";
     static char *err_no_elem    = "wrong element symbol";
     static char *err_no_float   = "float number is expected";
+    static char *err_no_sym     = "Schoenflies symbol is expected";
+    static char *err_wrong_sym  = "unknown symmetry group";
+    static char *err_eol_or_xyz = "end of line or orientation specification are expected";
+    static char *err_wrong_xyz  = "wrong orientation specification";
+    static char *err_xyz_used   = "orientation specification is unnecessary";
     int token_type;
 
     token_type = next_token();
@@ -88,8 +100,121 @@ void directive_geometry(molecule_t *mol)
 
     while (1) {
         token_type = next_token();
+        str_tolower(yytext);
 
-        if (token_type == TT_WORD) { // add new atom
+        // symmetry specification
+        if (token_type == TT_WORD && strcmp(yytext, "symmetry") == 0) {
+            token_type = next_token();
+            if (token_type != TT_WORD) {
+                yyerror(err_no_sym);
+            }
+            str_tolower(yytext);
+            if (strcmp(yytext, "c1") == 0) {
+                mol->sym_group.group = SYMMETRY_C1;
+            }
+            else if (strcmp(yytext, "c2") == 0) {
+                mol->sym_group.group = SYMMETRY_C2;
+                mol->sym_group.xyz[2] = 1;
+            }
+            else if (strcmp(yytext, "cs") == 0) {
+                mol->sym_group.group = SYMMETRY_Cs;
+                mol->sym_group.xyz[0] = 1;
+                mol->sym_group.xyz[1] = 1;
+            }
+            else if (strcmp(yytext, "ci") == 0) {
+                mol->sym_group.group = SYMMETRY_Ci;
+            }
+            else if (strcmp(yytext, "c2v") == 0) {
+                mol->sym_group.group = SYMMETRY_C2v;
+                mol->sym_group.xyz[2] = 1;
+            }
+            else if (strcmp(yytext, "c2h") == 0) {
+                mol->sym_group.group = SYMMETRY_C2h;
+                mol->sym_group.xyz[2] = 1;
+            }
+            else if (strcmp(yytext, "d2") == 0) {
+                mol->sym_group.group = SYMMETRY_D2;
+            }
+            else if (strcmp(yytext, "d2h") == 0) {
+                mol->sym_group.group = SYMMETRY_D2h;
+            }
+            else if (strcmp(yytext, "cinfv") == 0) {
+                mol->sym_group.group = SYMMETRY_Cinfv;
+                mol->sym_group.xyz[2] = 1;
+            }
+            else if (strcmp(yytext, "dinfh") == 0) {
+                mol->sym_group.group = SYMMETRY_Dinfh;
+                mol->sym_group.xyz[2] = 1;
+            }
+            else {
+                yyerror(err_wrong_sym);
+            }
+
+            token_type = next_token();
+            if (token_type == END_OF_LINE) {  // default orientation will be used
+                continue;
+            }
+            else if (token_type == TT_WORD) {
+                str_tolower(yytext);
+                if (mol->sym_group.group == SYMMETRY_C2  ||
+                    mol->sym_group.group == SYMMETRY_C2v ||
+                    mol->sym_group.group == SYMMETRY_C2h ||
+                    mol->sym_group.group == SYMMETRY_Cinfv ||
+                    mol->sym_group.group == SYMMETRY_Dinfh) {
+                        if (strcmp(yytext, "x") == 0) {
+                            mol->sym_group.xyz[0] = 1;
+                            mol->sym_group.xyz[1] = 0;
+                            mol->sym_group.xyz[2] = 0;
+                        }
+                        else if (strcmp(yytext, "y") == 0) {
+                            mol->sym_group.xyz[0] = 0;
+                            mol->sym_group.xyz[1] = 1;
+                            mol->sym_group.xyz[2] = 0;
+                        }
+                        else if (strcmp(yytext, "z") == 0) {
+                            mol->sym_group.xyz[0] = 0;
+                            mol->sym_group.xyz[1] = 0;
+                            mol->sym_group.xyz[2] = 1;
+                        }
+                        else {
+                            yyerror(err_wrong_xyz);
+                        }
+                    }
+                else if (mol->sym_group.group == SYMMETRY_Cs) {
+                    if (strcmp(yytext, "xy") == 0 || strcmp(yytext, "yx") == 0) {
+                        mol->sym_group.xyz[0] = 1;
+                        mol->sym_group.xyz[1] = 1;
+                        mol->sym_group.xyz[2] = 0;
+                    }
+                    else if (strcmp(yytext, "yz") == 0 || strcmp(yytext, "zy") == 0) {
+                        mol->sym_group.xyz[0] = 0;
+                        mol->sym_group.xyz[1] = 1;
+                        mol->sym_group.xyz[2] = 1;
+                    }
+                    else if (strcmp(yytext, "xz") == 0 || strcmp(yytext, "zx") == 0) {
+                        mol->sym_group.xyz[0] = 1;
+                        mol->sym_group.xyz[1] = 0;
+                        mol->sym_group.xyz[2] = 1;
+                    }
+                    else {
+                        yyerror(err_wrong_xyz);
+                    }
+                }
+                else {
+                    yyerror(err_xyz_used);
+                }
+            }
+            else {
+                yyerror(err_eol_or_xyz);
+            }
+
+            token_type = next_token();
+            if (token_type != END_OF_LINE) {  // default orientation will be used
+                yyerror(err_no_newline);
+            }
+        }
+        // xyz geometry
+        else if (token_type == TT_WORD) { // add new atom
             int nuc_charge;
             double r[] = {0.0, 0.0, 0.0};
 
@@ -127,6 +252,134 @@ void directive_geometry(molecule_t *mol)
         }
     }
 
+}
+
+
+void directive_ecp(ecp_lib_t *ecp_lib, int pot_type)
+{
+    static char *err_no_newline = "expected end of line";
+    static char *err_ang_mom   = "angular momentum symbol (one of SPDFGHIKLM) or keyword 'nelec' is expected";
+    static char *err_end_line  = "end of line is expected";
+    static char *err_end_float = "float number or end of line are expected";
+    static char *err_float     = "float number is expected";
+    static char *err_integer   = "non-negative integer number is expected";
+    static char *err_no_fun    = "no functions found in this block";
+    static char *err_no_elem   = "wrong element symbol";
+    int token_type;
+
+    token_type = next_token();
+    if (token_type != END_OF_LINE) {
+        yyerror(err_no_newline);
+    }
+
+    // read functions (ECP expansions for each L) until the 'end' keyword
+
+    while (1) {
+        int ang_mom, nelec, read_expansion = 0;
+        int n_primitives = 0;
+        int f_n[MAX_PRIMITIVES];
+        double f_e[MAX_PRIMITIVES];
+        double f_c[MAX_PRIMITIVES];
+        token_type = next_token();
+
+        if (token_type == TT_WORD) {
+
+            // get ECP for this element
+            str_tolower(yytext);
+            ecp_t *ecp = ecp_lib_get(ecp_lib, yytext);
+            if (ecp == NULL) {
+                int z = get_element_nuc_charge(yytext);
+                if (z == -1) {
+                    yyerror(err_no_elem);
+                }
+                ecp = ecp_new(z);
+            }
+
+            // get angular momentum or number of core electrons
+            token_type = next_token();
+            if (token_type != TT_WORD) {
+                yyerror(err_ang_mom);
+            }
+            str_tolower(yytext);
+            if (strcmp(yytext, "nelec") == 0) {  // number of core electrons
+                token_type = next_token();
+                if (token_type != TT_INTEGER) {
+                    yyerror(err_integer);
+                }
+                nelec = atoi(yytext);
+                if (nelec < 0) {
+                    yyerror(err_integer);
+                }
+                ecp->n_core_elec = nelec;
+            }
+            // angular momentum: U_L or S, P, D, ...
+            else if (strcmp(yytext, "ul") == 0) {
+                ang_mom = ECP_UL;
+                read_expansion = 1;
+            }
+            else {
+                ang_mom = angular_momentum_to_int(yytext);
+                if (ang_mom == -1) {
+                    yyerror(err_ang_mom);
+                }
+                read_expansion = 1;
+            }
+
+            token_type = next_token();
+            if (token_type != END_OF_LINE) {
+                yyerror(err_end_line);
+            }
+
+            // read Gaussian expansion if required
+            if (!read_expansion) {
+                ecp_lib_set(ecp_lib, ecp);
+                continue;
+            }
+
+            n_primitives = 0;
+            token_type = next_token();
+            while (token_type == TT_INTEGER) {
+                int n = atoi(yytext);
+                token_type = next_token();
+                if (token_type != TT_INTEGER && token_type != TT_FLOAT) {
+                    yyerror(err_float);
+                }
+                double exponent = atof(yytext);
+                token_type = next_token();
+                if (token_type != TT_INTEGER && token_type != TT_FLOAT) {
+                    yyerror(err_float);
+                }
+                double coef = atof(yytext);
+
+                token_type = next_token();
+                if (token_type != END_OF_LINE) {
+                    yyerror(err_end_line);
+                }
+
+                f_n[n_primitives] = n;
+                f_e[n_primitives] = exponent;
+                f_c[n_primitives] = coef;
+                n_primitives++;
+
+                token_type = next_token();
+            }
+            put_back(token_type);
+
+            // add expansion to ECP
+            ecp_add_function(ecp, pot_type, ang_mom, n_primitives, f_n, f_e, f_c);
+            ecp_lib_set(ecp_lib, ecp);
+        }
+        else if (token_type == END_OF_LINE) {
+            /* empty line, nothing to do */
+            continue;
+        }
+        else if (token_type == KEYWORD_END) {
+            return;
+        }
+        else {
+            yyerror("unexpected token");
+        }
+    }
 }
 
 
@@ -168,7 +421,7 @@ void directive_basis_block(basis_lib_t *basis_lib)
     static char *err_ang_mom   = "angular momentum symbol (one of SPDFGHIKLM) is expected";
     static char *err_end_line  = "end of line is expected";
     static char *err_end_float = "float number or end of line are expected";
-    static char *err_float     = "float number if expected";
+    static char *err_float     = "float number is expected";
     static char *err_no_fun    = "no functions found in this block";
     static char *err_no_elem   = "wrong element symbol";
 

@@ -10,6 +10,10 @@ molecule_t *molecule_new()
     molecule_t *mol = (molecule_t *) malloc(sizeof(molecule_t));
 
     mol->n_atoms = 0;
+    mol->sym_group.group = SYMMETRY_AUTO;
+    mol->sym_group.xyz[0] = 0;
+    mol->sym_group.xyz[1] = 0;
+    mol->sym_group.xyz[2] = 0;
 
     return mol;
 }
@@ -17,7 +21,7 @@ molecule_t *molecule_new()
 
 void molecule_delete(molecule_t *mol)
 {
-
+    free(mol);
 }
 
 
@@ -42,5 +46,7 @@ void molecule_print(molecule_t *mol)
     for (int i = 0; i < mol->n_atoms; i++) {
         printf("  %3d%12.8f%12.8f%12.8f\n", mol->charges[i], mol->x[i], mol->y[i], mol->z[i]);
     }
+    printf("Symmetry: %d\n (orientation %d %d %d)\n", mol->sym_group.group,
+        mol->sym_group.xyz[0], mol->sym_group.xyz[1], mol->sym_group.xyz[2]);
     printf("\n");
 }

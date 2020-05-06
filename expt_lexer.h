@@ -22,6 +22,7 @@ enum {
     KEYWORD_GEOMETRY,
     KEYWORD_BASIS,
     KEYWORD_ECP,
+    KEYWORD_SO,
     KEYWORD_END,
     /* special */
     END_OF_LINE,

@@ -19,6 +19,16 @@ basis_lib_t *basis_lib_new()
 
 void basis_lib_delete(basis_lib_t *bas_lib)
 {
+    int sz = sizeof(bas_lib->basis_list) / sizeof(basis_t *);
+
+    for (int i = 0; i < sz; i++) {
+        basis_t *bas = bas_lib->basis_list[i];
+        if (bas != NULL) {
+            basis_delete(bas);
+        }
+    }
+
+    free(bas_lib);
 }
 
 

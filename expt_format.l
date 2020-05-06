@@ -18,6 +18,7 @@ int prev_len = -1;
 geometry        { inc_col(); return KEYWORD_GEOMETRY;     }
 basis           { inc_col(); return KEYWORD_BASIS;        }
 ecp             { inc_col(); return KEYWORD_ECP;          }
+so              { inc_col(); return KEYWORD_SO;           }
 end             { inc_col(); return KEYWORD_END;          }
 \".*\"          { inc_col(); return TT_QUOTE;             }
 [-]             { inc_col(); return TT_HYPHEN;            }

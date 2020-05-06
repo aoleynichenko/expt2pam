@@ -1,6 +1,7 @@
 CC=clang
-CFLAGS=
-OBJECTS=main.o basis.o expt_parse.o lex.yy.o error.o bfn.o basis_lib.o elements.o molecule.o
+CFLAGS=-g
+OBJECTS=main.o basis.o expt_parse.o lex.yy.o error.o bfn.o basis_lib.o \
+	elements.o molecule.o ecp.o ecp_lib.o
 
 all: expt2pam.x
 
@@ -36,3 +37,9 @@ elements.o: elements.c
 
 molecule.o: molecule.c
 	$(CC) $(CFLAGS) molecule.c -c
+
+ecp.o: ecp.c
+	$(CC) $(CFLAGS) ecp.c -c
+
+ecp_lib.o: ecp_lib.c
+	$(CC) $(CFLAGS) ecp_lib.c -c
