@@ -86,6 +86,32 @@ void ecp_add_function(ecp_t *ecp, int type, int ang_mom, int nprim, int *powers,
 }
 
 
+void ecp_get_len(ecp_t *ecp, int *len_arep, int *len_esop)
+{
+    *len_arep = 0;
+    *len_esop = 0;
+
+    for (int i = 0; i <= ECP_MAX_ANG_MOM; i++) {
+        ecp_expansion_t *f = ecp->arep[i];
+        if (f == NULL) {
+            break;
+        }
+        else {
+            *len_arep = i + 1;
+        }
+    }
+    for (int i = 0; i <= ECP_MAX_ANG_MOM; i++) {
+        ecp_expansion_t *f = ecp->esop[i];
+        if (f == NULL) {
+            continue;
+        }
+        else {
+            *len_esop = i - 1;  // since begins from L = P
+        }
+    }
+}
+
+
 void ecp_print(ecp_t *ecp)
 {
     printf("\nECP for E%d\n", ecp->element);

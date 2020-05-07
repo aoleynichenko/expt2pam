@@ -13,5 +13,6 @@ typedef struct {
 
 bfn_t *bfn_new(int ang_mom, int nprim, double *e, double *c);
 void bfn_delete(bfn_t *bf);
+int bfn_same_exponents(bfn_t *b1, bfn_t *b2);
 
 #endif /* BFN_H_INCLUDED */

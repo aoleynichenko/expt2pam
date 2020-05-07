@@ -21,17 +21,17 @@ int main(int argc, char **argv)
 
     parse_argv(argc, argv, inp_file, MAX_FILE_NAME);
 
-    printf("Input file: %s\n", inp_file);
-
     bas = basis_lib_new();
     ecp = ecp_lib_new();
     mol = molecule_new();
 
     expt_parse(inp_file, mol, bas, ecp);
 
-    basis_lib_print(bas);
+    /*basis_lib_print(bas);
     ecp_lib_print(ecp);
-    molecule_print(mol);
+    molecule_print(mol);*/
+
+    gen_pam(stdout, mol, bas, ecp);
 
     molecule_delete(mol);
     ecp_lib_delete(ecp);

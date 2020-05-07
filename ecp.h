@@ -29,5 +29,6 @@ ecp_t *ecp_new(int element);
 void ecp_delete(ecp_t *ecp);
 void ecp_add_function(ecp_t *ecp, int type, int ang_mom, int nprim, int *powers, double *e, double *c);
 void ecp_print(ecp_t *ecp);
+void ecp_get_len(ecp_t *ecp, int *len_arep, int *len_esop);
 
 #endif /* ECP_H_INCLUDED */

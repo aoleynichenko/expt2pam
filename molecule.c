@@ -39,6 +39,42 @@ void molecule_add_atom(molecule_t *mol, int nuc_charge, double x, double y, doub
 }
 
 
+int molecule_n_atom_types(molecule_t *mol)
+{
+    int n_atoms[N_CHEM_ELEMENTS];
+    int n_atom_types;
+
+    memset(n_atoms, 0, sizeof(n_atoms));
+
+    for (int i = 0; i < mol->n_atoms; i++) {
+        n_atoms[mol->charges[i]]++;
+    }
+
+    n_atom_types = 0;
+    for (int i = 0; i < N_CHEM_ELEMENTS; i++) {
+        if (n_atoms[i] > 0) {
+            n_atom_types++;
+        }
+    }
+
+    return n_atom_types;
+}
+
+
+int molecule_n_atoms_of(molecule_t *mol, int element)
+{
+    int n_atoms = 0;
+
+    for (int i = 0; i < mol->n_atoms; i++) {
+        if (mol->charges[i] == element) {
+            n_atoms++;
+        }
+    }
+
+    return n_atoms;
+}
+
+
 void molecule_print(molecule_t *mol)
 {
     printf("\ngeometry:\n");

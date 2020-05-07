@@ -31,6 +31,11 @@ void basis_delete(basis_t *bas)
 
 void basis_add_function(basis_t *bas, int ang_mom, int nprim, double *e, double *c)
 {
+    bfn_t *bf = bfn_new(ang_mom, nprim, e, c);
+    if (bf == NULL) {
+        return;
+    }
+
     if (bas->nfun == 0) {
         bas->nfun = 1;
         bas->functions = (bfn_t **) malloc(sizeof(bfn_t *) * 1);
@@ -40,7 +45,6 @@ void basis_add_function(basis_t *bas, int ang_mom, int nprim, double *e, double 
         bas->functions = (bfn_t **) realloc(bas->functions, sizeof(bfn_t *) * bas->nfun);
     }
 
-    bfn_t *bf = bfn_new(ang_mom, nprim, e, c);
     bas->functions[bas->nfun - 1] = bf;
 }
 

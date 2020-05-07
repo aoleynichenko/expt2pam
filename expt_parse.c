@@ -10,8 +10,8 @@
 #include "expt_lexer.h"
 #include "molecule.h"
 
-#define MAX_LINE_LEN 1024
-#define MAX_FILE_NAME 1024
+#define MAX_LINE_LEN   1024
+#define MAX_FILE_NAME  1024
 #define MAX_PRIMITIVES 100
 #define MAX_CONTRACTED 100
 

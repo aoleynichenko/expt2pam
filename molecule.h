@@ -37,5 +37,7 @@ molecule_t *molecule_new();
 void molecule_delete(molecule_t *mol);
 void molecule_add_atom(molecule_t *mol, int nuc_charge, double x, double y, double z);
 void molecule_print(molecule_t *mol);
+int molecule_n_atom_types(molecule_t *mol);
+int molecule_n_atoms_of(molecule_t *mol, int element);
 
 #endif /* MOLECULE_H_INCLUDED */
