@@ -91,9 +91,35 @@ void directive_geometry(molecule_t *mol)
     static char *err_eol_or_xyz = "end of line or orientation specification are expected";
     static char *err_wrong_xyz  = "wrong orientation specification";
     static char *err_xyz_used   = "orientation specification is unnecessary";
+    static char *err_wrong_units= "wrong units (allowed: au, atomic, bohr, angstroms)";
     int token_type;
+    double factor = 1.0;
 
     token_type = next_token();
+
+    if (token_type == TT_WORD && strcmp(yytext, "units") == 0) {
+        token_type = next_token();
+        if (token_type == TT_WORD && strcmp(yytext, "au") == 0) {
+            factor = 1.0;
+        }
+        else if (token_type == TT_WORD && strcmp(yytext, "atomic") == 0) {
+            factor = 1.0;
+        }
+        else if (token_type == TT_WORD && strcmp(yytext, "bohr") == 0) {
+            factor = 1.0;
+        }
+        else if (token_type == TT_WORD && strcmp(yytext, "angstroms") == 0) {
+            factor = 1.0 / 0.529177210903;
+        }
+        else {
+            yyerror(err_wrong_units);
+        }
+        token_type = next_token();
+    }
+    else if (token_type != END_OF_LINE) {
+        yyerror(err_no_newline);
+    }
+
     if (token_type != END_OF_LINE) {
         yyerror(err_no_newline);
     }
@@ -238,7 +264,7 @@ void directive_geometry(molecule_t *mol)
                 yyerror(err_no_newline);
             }
 
-            molecule_add_atom(mol, nuc_charge, r[0], r[1], r[2]);
+            molecule_add_atom(mol, nuc_charge, factor*r[0], factor*r[1], factor*r[2]);
         }
         else if (token_type == END_OF_LINE) {
             /* empty line, nothing to do */

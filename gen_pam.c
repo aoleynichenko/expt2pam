@@ -31,7 +31,74 @@ void gen_pam(FILE *out, molecule_t *mol, basis_lib_t *bas_lib, ecp_lib_t *ecp_li
     // number of atom types
     // 'A' label for angstroms if needed
     int n_atom_types = molecule_n_atom_types(mol);
-    fprintf(out, "C  %2d\n", n_atom_types);
+    fprintf(out, "C  %2d", n_atom_types);
+
+    // symmetry data
+    if (mol->sym_group.group == SYMMETRY_C1) {
+        fprintf(out, "    0");
+    }
+    else if (mol->sym_group.group == SYMMETRY_Ci) {
+        fprintf(out, "    1XYZ");
+    }
+    else if (mol->sym_group.group == SYMMETRY_Cs) {
+        if (mol->sym_group.xyz[0] == 1 && mol->sym_group.xyz[1] == 1) {
+            fprintf(out, "    1  Z");
+        }
+        else if (mol->sym_group.xyz[0] == 1 && mol->sym_group.xyz[2] == 1) {
+            fprintf(out, "    1  Y");
+        }
+        else if (mol->sym_group.xyz[1] == 1 && mol->sym_group.xyz[2] == 1) {
+            fprintf(out, "    1  X");
+        }
+    }
+    else if (mol->sym_group.group == SYMMETRY_C2) {
+        if (mol->sym_group.xyz[0] == 1) {
+            fprintf(out, "    1 YZ");
+        }
+        else if (mol->sym_group.xyz[1] == 1) {
+            fprintf(out, "    1X Z");
+        }
+        else if (mol->sym_group.xyz[2] == 1) {
+            fprintf(out, "    1XY");
+        }
+    }
+    else if (mol->sym_group.group == SYMMETRY_C2v) {
+        if (mol->sym_group.xyz[0] == 1) {
+            fprintf(out, "    2 Y   Z");
+        }
+        else if (mol->sym_group.xyz[1] == 1) {
+            fprintf(out, "    2  ZX");
+        }
+        else if (mol->sym_group.xyz[2] == 1) {
+            fprintf(out, "    2 Y X");
+        }
+    }
+    else if (mol->sym_group.group == SYMMETRY_C2h) {
+        if (mol->sym_group.xyz[0] == 1) {
+            fprintf(out, "    2X  XYZ");
+        }
+        else if (mol->sym_group.xyz[1] == 1) {
+            fprintf(out, "    2 Y XYZ");
+        }
+        else if (mol->sym_group.xyz[2] == 1) {
+            fprintf(out, "    2  ZXYZ");
+        }
+    }
+    else if (mol->sym_group.group == SYMMETRY_D2) {
+        fprintf(out, "    2XY  YZ");
+    }
+    else if (mol->sym_group.group == SYMMETRY_D2h) {
+        fprintf(out, "    3  Z  Y  X");
+    }
+    else if (mol->sym_group.group == SYMMETRY_Cinfv) {
+        // add ghost
+        molecule_add_atom(mol, 0, mol->sym_group.xyz[0]*100,
+            mol->sym_group.xyz[1]*100, mol->sym_group.xyz[2]*100);
+    }
+    else {
+    }
+    fprintf(out, "\n");
+
 
     // loop over atom types
     // heavier elements first
@@ -55,6 +122,9 @@ void gen_pam(FILE *out, molecule_t *mol, basis_lib_t *bas_lib, ecp_lib_t *ecp_li
 
         // generate basis
         basis_t *bas = basis_lib_get(bas_lib, elem_sym);
+        if (bas == NULL) {
+            continue;
+        }
         int n_blocks;
         int block_sizes[MAX_ANG_MOM];
 
@@ -91,6 +161,7 @@ void gen_pam(FILE *out, molecule_t *mol, basis_lib_t *bas_lib, ecp_lib_t *ecp_li
             else {
                 fprintf(out, "# %c\n", tolower(angular_momentum_to_char(i - 1)));
             }
+            printf("%d\n", f->nprim);
             for (int j = 0; j < f->nprim; j++) {
                 fprintf(out, "%4d%24.12e%24.12e\n", f->powers[j], f->e[j], f->c[j]);
             }
@@ -103,6 +174,7 @@ void gen_pam(FILE *out, molecule_t *mol, basis_lib_t *bas_lib, ecp_lib_t *ecp_li
             else {
                 fprintf(out, "# %c (spin-orbit)\n", tolower(angular_momentum_to_char(i - 1)));
             }
+            printf("%d\n", f->nprim);
             for (int j = 0; j < f->nprim; j++) {
                 fprintf(out, "%4d%24.12e%24.12e\n", f->powers[j], f->e[j], f->c[j]);
             }
@@ -226,13 +298,19 @@ void print_l_blocks_dirac(FILE *out, basis_t *bas, int L)
         int block_size = block_sizes[ibl];
         bfn_t **funcs = basis_functions[ibl];
         int nprim = funcs[0]->nprim;
-        fprintf(out, "F%3d%3d\n", nprim, block_size);
-        for (int i = 0; i < nprim; i++) {
-            fprintf(out, "%24.10f", funcs[0]->e[i]);
-            for (int j = 0; j < block_size; j++) {
-                fprintf(out, "%16.10f", funcs[j]->c[i]);
+        int nprint = 0;
+
+        // max 4 contracted functions in block
+        for (int icontr = 0; icontr < block_size; icontr += 4) {
+            nprint = (block_size - icontr > 4) ? 4 : (block_size-icontr);
+            fprintf(out, "F%3d%3d\n", nprim, nprint);
+            for (int i = 0; i < nprim; i++) {
+                fprintf(out, "%20.8f", funcs[0]->e[i]);
+                for (int j = 0; j < nprint; j++) {
+                    fprintf(out, "%14.8f", funcs[icontr+j]->c[i]);
+                }
+                fprintf(out, "\n");
             }
-            fprintf(out, "\n");
         }
     }
 
@@ -244,7 +322,7 @@ void print_l_blocks_dirac(FILE *out, basis_t *bas, int L)
             if (bf->l != L || bf->nprim != 1) {
                 continue;
             }
-            fprintf(out, "%24.10f\n", bf->e[0]);
+            fprintf(out, "%20.8f\n", bf->e[0]);
         }
     }
 }
