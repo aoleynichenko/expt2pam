@@ -5,6 +5,10 @@
 
 #include "molecule.h"
 
+
+/**
+ * constructor
+ */
 molecule_t *molecule_new()
 {
     molecule_t *mol = (molecule_t *) malloc(sizeof(molecule_t));
@@ -19,12 +23,18 @@ molecule_t *molecule_new()
 }
 
 
+/**
+ * destructor
+ */
 void molecule_delete(molecule_t *mol)
 {
     free(mol);
 }
 
 
+/**
+ * adds one atom to the 'molecule_t' object
+ */
 void molecule_add_atom(molecule_t *mol, int nuc_charge, double x, double y, double z)
 {
     int n_at = mol->n_atoms;
@@ -39,6 +49,9 @@ void molecule_add_atom(molecule_t *mol, int nuc_charge, double x, double y, doub
 }
 
 
+/**
+ * number of types of elements
+ */
 int molecule_n_atom_types(molecule_t *mol)
 {
     int n_atoms[N_CHEM_ELEMENTS];
@@ -61,6 +74,9 @@ int molecule_n_atom_types(molecule_t *mol)
 }
 
 
+/**
+ * counts number of atoms of the element given
+ */
 int molecule_n_atoms_of(molecule_t *mol, int element)
 {
     int n_atoms = 0;

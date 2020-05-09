@@ -1,7 +1,7 @@
 CC=clang
 CFLAGS=-g
-OBJECTS=main.o basis.o expt_parse.o lex.yy.o error.o bfn.o basis_lib.o \
-	elements.o molecule.o ecp.o ecp_lib.o gen_pam.o
+OBJECTS=main.o basis.o expt_parse.o lex.yy.o error.o \
+	elements.o molecule.o ecp.o gen_pam.o
 
 all: expt2pam.x
 

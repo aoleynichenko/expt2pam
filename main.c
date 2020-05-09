@@ -2,14 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "basis_lib.h"
-#include "ecp_lib.h"
-#include "expt.h"
+#include "basis.h"
+#include "ecp.h"
 #include "molecule.h"
 
 #define MAX_FILE_NAME 1024
 
 void parse_argv(int argc, char **argv, char *file_name, int maxlen);
+void expt_parse(char *file_name, molecule_t *mol, basis_lib_t *basis, ecp_lib_t *ecp_lib);
+void gen_pam(FILE *out, molecule_t *mol, basis_lib_t *bas_lib, ecp_lib_t *ecp_lib);
 
 
 int main(int argc, char **argv)

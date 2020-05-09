@@ -1,11 +1,96 @@
+/**
+ * parser
+ *
+ * Format of EXP-T input file for molecules is very similar to NWChem's one:
+ * http://www.nwchem-sw.org/index.php/Main_Page
+ *
+ * Example (for UO2 molecule, adapted from http://www.nwchem-sw.org/index.php/SODFT):
+ *
+ * geometry units angstrom
+ *   U     0.00000      0.00000     0.00000
+ *   O     0.00000      0.00000     1.68000
+ *   O     0.00000      0.00000    -1.68000
+ * end
+ *
+ * basis
+ * U    S
+ *       12.12525300         0.02192100
+ *        7.16154500        -0.22516000
+ *        4.77483600         0.56029900
+ *        2.01169300        -1.07120900
+ * . . .
+ * U    P
+ *       17.25477000         0.00139800
+ *        7.73535600        -0.03334600
+ *        5.15587800         0.11057800
+ *        2.24167000        -0.31726800
+ * . . .
+ *
+ * O    S
+ *       47.10551800        -0.01440800
+ *        5.91134600         0.12956800
+ *        0.97648300        -0.56311800
+ * . . .
+ * O    P
+ *       16.69221900         0.04485600
+ *        3.90070200         0.22261300
+ *        1.07825300         0.50018800
+ * . . .
+ * end
+ *
+ * ecp
+ * U nelec 78
+ * U s
+ *  2          4.06365300        112.92010300
+ *  2          1.88399500         15.64750000
+ *  2          0.88656700         -3.68997100
+ * U p
+ *  2          3.98618100        118.75801600
+ *  2          2.00016000         15.07722800
+ *  2          0.96084100          0.55672000
+ * U d
+ *  2          4.14797200         60.85589200
+ *  2          2.23456300         29.28004700
+ *  2          0.91369500          4.99802900
+ * U f
+ *  2          3.99893800         49.92403500
+ *  2          1.99884000        -24.67404200
+ *  2          0.99564100          1.38948000
+ * O nelec 2
+ * O s
+ *  2         10.44567000         50.77106900
+ * O p
+ *  2         18.04517400         -4.90355100
+ * O d
+ *  2          8.16479800         -3.31212400
+ * end
+ *
+ * #spin-orbit part
+ * so
+ * U p
+ *  2    3.986181      1.816350
+ *  2    2.000160     11.543940
+ *  2    0.960841      0.794644
+ * U d
+ *  2    4.147972      0.353683
+ *  2    2.234563      3.499282
+ *  2    0.913695      0.514635
+ * U f
+ *  2    3.998938      4.744214
+ *  2    1.998840     -5.211731
+ *  2    0.995641      1.867860
+ * end
+ *
+ */
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "basis_lib.h"
-#include "ecp_lib.h"
+#include "basis.h"
+#include "ecp.h"
 #include "error.h"
 #include "expt_lexer.h"
 #include "molecule.h"
@@ -31,6 +116,9 @@ void parse_sector(char *s, int *h, int *p);
 int angular_momentum_to_int(char *lstr);
 
 
+/**
+ * main subroutine of the parser
+ */
 void expt_parse(char *file_name, molecule_t *mol, basis_lib_t *basis, ecp_lib_t *ecp_lib)
 {
     int token_type;
@@ -91,7 +179,7 @@ void directive_geometry(molecule_t *mol)
     static char *err_eol_or_xyz = "end of line or orientation specification are expected";
     static char *err_wrong_xyz  = "wrong orientation specification";
     static char *err_xyz_used   = "orientation specification is unnecessary";
-    static char *err_wrong_units= "wrong units (allowed: au, atomic, bohr, angstroms)";
+    static char *err_wrong_units= "wrong units (allowed: au, atomic, bohr, angstrom)";
     int token_type;
     double factor = 1.0;
 
@@ -108,7 +196,7 @@ void directive_geometry(molecule_t *mol)
         else if (token_type == TT_WORD && strcmp(yytext, "bohr") == 0) {
             factor = 1.0;
         }
-        else if (token_type == TT_WORD && strcmp(yytext, "angstroms") == 0) {
+        else if (token_type == TT_WORD && strcmp(yytext, "angstrom") == 0) {
             factor = 1.0 / 0.529177210903;
         }
         else {

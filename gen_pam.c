@@ -4,22 +4,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "basis_lib.h"
-#include "ecp_lib.h"
+#include "basis.h"
+#include "ecp.h"
 #include "elements.h"
 #include "molecule.h"
 
-#define MAX_ANG_MOM 10
-
+#define MAX_ANG_MOM    10
 #define MAX_CONTRACTED 100
 
 void basis_get_blocks_for_dirac(basis_t *bas, int *n_blocks, int* n_block_sizes, int len_block_sizes);
 char angular_momentum_to_char(int l);
 int basis_max_ang_mom(basis_t *bas);
 void print_l_blocks_dirac(FILE *out, basis_t *bas, int L);
-
 int basis_get_number_l_blocks(basis_t *bas, int L);
 
+
+/**
+ * generates DIRAC 'mol' file.
+ * about mol format:
+ * http://www.diracprogram.org/doc/release-19/molecule_and_basis/molecule_using_mol.html
+ */
 void gen_pam(FILE *out, molecule_t *mol, basis_lib_t *bas_lib, ecp_lib_t *ecp_lib)
 {
     // first three lines -- comment
@@ -152,7 +156,12 @@ void gen_pam(FILE *out, molecule_t *mol, basis_lib_t *bas_lib, ecp_lib_t *ecp_li
 
         for (int i = 0; i <= ECP_MAX_ANG_MOM; i++) {
             ecp_expansion_t *f = ecp->arep[i];
-            if (f == NULL) {
+            if (f == NULL && i < len_arep) { // no expansion, but it is needed
+                fprintf(out, "1\n");
+                fprintf(out, "%4d%24.12e%24.12e\n", 0, 1.0, 0.0);
+                continue;
+            }
+            else if (f == NULL) {
                 continue;
             }
             if (i == 0) {
@@ -168,7 +177,12 @@ void gen_pam(FILE *out, molecule_t *mol, basis_lib_t *bas_lib, ecp_lib_t *ecp_li
         }
         for (int i = 0; i <= ECP_MAX_ANG_MOM; i++) {
             ecp_expansion_t *f = ecp->esop[i];
-            if (f == NULL) {
+            if (f == NULL && i < len_esop && i >= 2) { // no expansion, but it is needed
+                fprintf(out, "1\n");
+                fprintf(out, "%4d%24.12e%24.12e\n", 0, 1.0, 0.0);
+                continue;
+            }
+            else if (f == NULL) {
                 continue;
             }
             else {
@@ -248,6 +262,9 @@ int basis_get_number_l_blocks(basis_t *bas, int L)
 }
 
 
+/**
+ * prints basis functions with given angular momentum L
+ */
 void print_l_blocks_dirac(FILE *out, basis_t *bas, int L)
 {
     bfn_t *basis_functions[MAX_CONTRACTED][MAX_CONTRACTED];   // functions which are first in each block
@@ -328,6 +345,11 @@ void print_l_blocks_dirac(FILE *out, basis_t *bas, int L)
 }
 
 
+/**
+ * counts number of L-blocks for each L (in DIRAC format)
+ * note that in mol format max length of line == 80 =>
+ * only 4 contracted functions can be printed simultaneously
+ */
 void basis_get_blocks_for_dirac(basis_t *bas, int *n_blocks, int* n_block_sizes, int len_block_sizes)
 {
     int n_cont_fun_by_l[MAX_ANG_MOM];
@@ -365,9 +387,6 @@ void basis_get_blocks_for_dirac(basis_t *bas, int *n_blocks, int* n_block_sizes,
         }
     }
 }
-
-
-
 
 
 char angular_momentum_to_char(int l)
